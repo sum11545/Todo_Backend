@@ -16,13 +16,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/tasks", async (req, res) => {
-  await pool.query("SELECT * FROM Sumit", (err, results) => {
-    if (err) {
-      console.error(err.message);
-      return res.status(500).json({ message: "Error fetching tasks" });
-    }
+  try {
+    const results = await pool.query("SELECT * FROM Sumit");
     res.json(results.rows);
-  });
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).json({ message: "Error fetching tasks" });
+  }
 });
 
 app.post("/addTask", async (req, res) => {
@@ -35,8 +35,15 @@ app.post("/addTask", async (req, res) => {
     });
   }
   try {
-    await pool.query(`INSERT INTO Sumit (taskname) VALUES ($1)`, [tasks]);
-    res.status(201).json({ message: "Task added successfully" });
+    const result = await pool.query(
+      `INSERT INTO Sumit (taskname) VALUES ($1)`,
+      [tasks]
+    );
+    if (result) {
+      return res.status(201).json({ message: "Task added successfully" });
+    } else {
+      return res.status(400).json({ message: "Task not added" });
+    }
   } catch (error) {
     res
       .status(500)
@@ -50,12 +57,18 @@ app.delete("/deleteTask/", async (req, res) => {
   console.log("Name Recived", name);
 
   if (!name) {
-    res.status(404).send({ message: "Taskname or id is required " });
+    return res.status(404).send({ message: "Taskname or id is required " });
   }
 
   try {
-    await pool.query("DELETE FROM Sumit WHERE taskname = $1", [name]);
-    res.status(200).json({ message: "Task deleted successfully" });
+    const result = await pool.query("DELETE FROM Sumit WHERE taskname = $1", [
+      name,
+    ]);
+    if (result.rowCount > 0) {
+      return res.status(200).json({ message: "Task deleted successfully" });
+    } else {
+      return res.status(404).json({ message: "Task not found" });
+    }
   } catch (err) {
     res
       .status(500)
@@ -70,14 +83,18 @@ app.put("/updateTask/:id", async (req, res) => {
   console.log("updated value", updatetask);
 
   if (!index || !updatetask) {
-    res.status(404).send({ message: "Index and task are required " });
+    return res.status(404).send({ message: "Index and task are required " });
   }
   try {
-    await pool.query(`UPDATE Sumit SET taskname =$1 WHERE id = $2`, [
-      updatetask,
-      index,
-    ]);
-    res.status(200).json({ message: "Task updated successfully" });
+    const result = await pool.query(
+      `UPDATE Sumit SET taskname =$1 WHERE id = $2`,
+      [updatetask, index]
+    );
+    if (result.rowCount > 0) {
+      return res.status(200).json({ message: "Task updated successfully" });
+    } else {
+      return res.status(500).json({ message: "Task not update" });
+    }
   } catch (error) {}
 });
 
