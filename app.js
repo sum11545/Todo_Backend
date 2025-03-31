@@ -51,7 +51,7 @@ app.post("/addTask", async (req, res) => {
   }
 });
 
-app.delete("/deleteTask/", async (req, res) => {
+app.delete("/deleteTask", async (req, res) => {
   const name = req.body.name;
 
   console.log("Name Recived", name);
@@ -93,7 +93,7 @@ app.put("/updateTask/:id", async (req, res) => {
     if (result.rowCount > 0) {
       return res.status(200).json({ message: "Task updated successfully" });
     } else {
-      return res.status(500).json({ message: "Task not update" });
+      return res.status(404).json({ message: "Task not update" });
     }
   } catch (error) {}
 });
